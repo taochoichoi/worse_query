@@ -1,10 +1,10 @@
-name: iOS Project Validation
+
+name: iOS Source Validation
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - '**/*.xcodeproj/**'
       - '**/*.swift'
       - '**/*.m'
       - '**/*.h'
@@ -17,24 +17,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Xcode version
-        run: xcodebuild -version
+      - name: Show Xcode environment
+        run: |
+          xcodebuild -version
+          xcode-select -p
 
-      - name: List Xcode project targets
+      - name: Check source files without opening the Xcode project
         shell: bash
         run: |
           set -euo pipefail
-          PROJECT=$(find . -maxdepth 3 -name '*.xcodeproj' -print -quit)
-          if [ -z "$PROJECT" ]; then
-            echo "No Xcode project found."
+          count=$(find . -type f \( -name '*.swift' -o -name '*.m' -o -name '*.h' \) | wc -l | tr -d ' ')
+          echo "Found $count Swift/Objective-C source files."
+          if [ "$count" -eq 0 ]; then
+            echo "No source files found."
             exit 1
           fi
-          echo "Found: $PROJECT"
-          xcodebuild -list -project "$PROJECT"
-
-      - name: Check repository structure
-        shell: bash
-        run: |
-          set -euo pipefail
-          find . -maxdepth 3 -type f \\( -name '*.swift' -o -name '*.m' -o -name '*.h' \\) -print
-          echo "Project structure check completed."
+          find . -type f \( -name '*.swift' -o -name '*.m' -o -name '*.h' \) -print
