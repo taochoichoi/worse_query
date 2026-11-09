@@ -1,0 +1,40 @@
+name: iOS Project Validation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.xcodeproj/**'
+      - '**/*.swift'
+      - '**/*.m'
+      - '**/*.h'
+      - '.github/workflows/ios-project-check.yml'
+
+jobs:
+  validate:
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: List Xcode project targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT=$(find . -maxdepth 3 -name '*.xcodeproj' -print -quit)
+          if [ -z "$PROJECT" ]; then
+            echo "No Xcode project found."
+            exit 1
+          fi
+          echo "Found: $PROJECT"
+          xcodebuild -list -project "$PROJECT"
+
+      - name: Check repository structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -maxdepth 3 -type f \\( -name '*.swift' -o -name '*.m' -o -name '*.h' \\) -print
+          echo "Project structure check completed."
